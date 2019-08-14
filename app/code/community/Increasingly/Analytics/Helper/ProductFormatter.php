@@ -68,15 +68,31 @@ class Increasingly_Analytics_Helper_ProductFormatter extends Mage_Core_Helper_Ab
          $productData['special_price'] = $priceFormatter->format($product->getSpecialPrice());  
        } 
      
-       if($product->getResource()->getAttribute('description'))
+       if ($product->hasData('description')) 
        {
-         $productData['description'] = $product->getDescription();  
+         $productData['description'] = $product->getData('description');
+       }
+
+       if($productData['description'] == null || empty($productData['description']))
+       {
+	  if($product->getResource()->getAttribute('description'))
+	  {
+	    $productData['description'] = $product->getDescription();  
+	  }
        }  
  
-       if($product->getResource()->getAttribute('short_description'))
+       if ($product->hasData('short_description')) 
        {
-         $productData['short_description'] = $product->getShortDescription();  
-       }  
+      	  $productData['short_description'] = $product->getData('short_description');
+       }
+
+       if($productData['short_description'] == null || empty($productData['short_description']))
+       {
+          if($product->getResource()->getAttribute('short_description'))
+          {
+            $productData['short_description'] = $product->getShortDescription();  
+          }  
+       }
 
        if($product->getResource()->getAttribute('status'))
        {
@@ -96,6 +112,8 @@ class Increasingly_Analytics_Helper_ProductFormatter extends Mage_Core_Helper_Ab
           $productData['image_url'] = $product->getImageUrl();
         }
        }
+       
+       $productData['original_image_url'] = $this->buildImageUrl($product);
 
        if($product->getResource()->getAttribute('manufacturer'))
        {
@@ -257,6 +275,29 @@ class Increasingly_Analytics_Helper_ProductFormatter extends Mage_Core_Helper_Ab
 
     return $productData;
   }  
+
+  protected function buildImageUrl($product)
+  {
+    $store = Mage::app()->getStore();
+    $url = null;   
+    $helper = Mage::helper('increasingly_analytics');
+    $imageVersion = $helper->getProductImageVersion($store);
+    $img = $product->getData($imageVersion);
+    $img = $this->isValidImage($img) ? $img : $product->getData('image');
+    if ($this->isValidImage($img)) {
+        // We build the image url manually in order get the correct base url
+        $baseUrl = rtrim($store->getBaseUrl('media'), '/');
+        $file = str_replace(DS, '/', $img);
+        $file = ltrim($file, '/');
+        $url = $baseUrl.'/catalog/product/'.$file;
+    }
+    return $url;
+  }
+
+  protected function isValidImage($image)
+  {
+    return (!empty($image) && $image !== 'no_selection');
+  }
 
 }
 

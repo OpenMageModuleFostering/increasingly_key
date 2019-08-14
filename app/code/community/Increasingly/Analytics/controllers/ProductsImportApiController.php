@@ -104,7 +104,16 @@ class Increasingly_Analytics_ProductsImportApiController extends Mage_Core_Contr
               }
            }
 
-          
+           if ($product->hasData('description') && $productData['description'] == null) 
+           {
+             $productData['description'] = $product->getData('description');
+           }       
+ 
+           if ($product->hasData('short_description') && $productData['short_description'] == null) 
+       	   {
+      	      $productData['short_description'] = $product->getData('short_description');
+           }
+
 	   if($productData['product_type_name'] == "configurable") 
       	   {
              $configurableProducts = Mage::getModel('catalog/product_type_configurable')->getChildrenIds($productData['product_id']);
@@ -213,6 +222,7 @@ class Increasingly_Analytics_ProductsImportApiController extends Mage_Core_Contr
          
           $inventoryDetails = $stock->getData();
           $productData['inventory_details'] = $inventoryDetails;
+	  $productData['original_image_url'] = $this->buildImageUrl($product);
 
           $products[] = $productData;
 
@@ -300,6 +310,29 @@ class Increasingly_Analytics_ProductsImportApiController extends Mage_Core_Contr
       return false;
     }
 
+  }
+
+  protected function buildImageUrl($product)
+  {
+    $store = Mage::app()->getStore();
+    $url = null;   
+    $helper = Mage::helper('increasingly_analytics');
+    $imageVersion = $helper->getProductImageVersion($store);
+    $img = $product->getData($imageVersion);
+    $img = $this->isValidImage($img) ? $img : $product->getData('image');
+    if ($this->isValidImage($img)) {
+        // We build the image url manually in order get the correct base url
+        $baseUrl = rtrim($store->getBaseUrl('media'), '/');
+        $file = str_replace(DS, '/', $img);
+        $file = ltrim($file, '/');
+        $url = $baseUrl.'/catalog/product/'.$file;
+    }
+    return $url;
+  }
+
+  protected function isValidImage($image)
+  {
+    return (!empty($image) && $image !== 'no_selection');
   }
 
 }
