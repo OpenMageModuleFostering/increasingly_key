@@ -110,11 +110,7 @@ class Increasingly_Analytics_ProductsApiController extends Mage_Core_Controller_
         if($attribute->getAttributeCode() == 'size')      
         {
             array_push($tempAttributes,'size');
-        }  
-        if($attribute->getAttributeCode() == 'visibility')      
-        {
-            array_push($tempAttributes,'visibility');
-        }    
+        }      
       }      
       $attributes = $tempAttributes;
       $productsCollection = Mage::getModel('catalog/product')->getCollection();
