@@ -244,7 +244,7 @@ class Increasingly_Analytics_Helper_Data extends Mage_Core_Helper_Abstract
     try { 
       $cookieValue = Mage::getModel('core/cookie')->get('ivid'); 
       $userBundleCollection = Mage::getModel('increasingly_analytics/bundle')->getCollection()->addFieldToFilter('increasingly_visitor_id',$cookieValue);
-      $productIds = explode(',', $userBundle->getProductIds);
+      //$productIds = explode(',', $userBundle->getProductIds);
       if($quote->getItemsCount() == 0 && count($userBundleCollection) >= 0) {
          foreach ($userBundleCollection as $userBundle) {
            $userBundle->delete();
@@ -279,7 +279,7 @@ class Increasingly_Analytics_Helper_Data extends Mage_Core_Helper_Abstract
       ksort($data);     
       $encodedData = base64_encode(Mage::helper('core')->jsonEncode($data));
       $signature = md5($encodedData.$api_secret);
-      $url = 'http://optimizedby.increasingly.co/ImportData';
+      $url = 'https://optimizedby.increasingly.co/ImportData';
       $client = new Varien_Http_Client($url);
        
       $postData = array(

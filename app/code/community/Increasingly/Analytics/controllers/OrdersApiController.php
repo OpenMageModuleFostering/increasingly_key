@@ -25,13 +25,13 @@
 * @license   http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 */
 /**
-* Returns product details to increasingly on API call
+* Returns order details to increasingly on API call
 */
 
-class Increasingly_Analytics_ProductsApiController extends Mage_Core_Controller_Front_Action 
+class Increasingly_Analytics_OrdersApiController extends Mage_Core_Controller_Front_Action 
 {
  
- public function productsAction() 
+ public function ordersAction() 
   {
     try 
     {
@@ -42,28 +42,81 @@ class Increasingly_Analytics_ProductsApiController extends Mage_Core_Controller_
         return $this;
       }
 
-      $products = array();
-      $productFormatHelper = Mage::helper('increasingly_analytics/ProductFormatter');
+      $orders = array();         
 
       $limit = $this->getRequest()->getParam('limit', 200);
-      $offset = $this->getRequest()->getParam('offset', 1);     
-     
-      $productsCollection = Mage::getModel('catalog/product')->getCollection();
-      $productsCollection->addAttributeToSelect('*')->getSelect()->limit($limit, $offset);
-      $totalProductCount = Mage::getModel('catalog/product')->getCollection()->count();
+      $offset = $this->getRequest()->getParam('offset', 1);
+      
+      $orders =Mage::getModel('sales/order')->getCollection()->setPageSize($limit)->setCurPage($offset);      
+      $totalOrdersCount = Mage::getModel('sales/order')->getCollection()->getSize();
 
-      foreach($productsCollection as $product) 
-      { 
-        $product = $productFormatHelper->formatProductInfo($product);  
+      $orderDetailsForImport = array();
 
-        if($product !== null)
-        {
-          $products[] = $product;
-        }
-      }
+      foreach ($orders as $order) 
+      {
+          if ($order->getId()) 
+          {            
+            $priceFormatter = Mage::helper('increasingly_analytics/PriceFormatter');   
+           
+	    $orderDetails = array(
+		'order_id'            => $order->getIncrementId(),
+		'order_status'        => $order->getStatus(),
+		'order_amount'        => $priceFormatter->format($order->getGrandTotal()),
+		'shipping_amount'     => $priceFormatter->format($order->getShippingAmount()),
+		'tax_amount'          => $priceFormatter->format($order->getTaxAmount()),
+		'items'               => array(),
+		'shipping_method'     => $order->getShippingDescription(),
+		'currency_code'       => $order->getOrderCurrencyCode(),
+		'payment_method'      => $order->getPayment()->getMethodInstance()->getTitle()	    
+	    );
 
+	    if($order->getCustomerIsGuest()){
+	      $orderDetails['customer_email']        = $order->getCustomerEmail();
+	      $orderDetails['customer_first_name']   = $order->getCustomerFirstname();
+	      $orderDetails['customer_last_name']    = $order->getCustomerLastname();
+	      $orderDetails['customer_name']         = $order->getCustomerFirstname(). ' '. $order->getCustomerLastname();	       
+	    }
+	    else {
+	      $orderDetails['customer_email']        = $order->getCustomerEmail();
+	      $orderDetails['customer_first_name']   = $order->getBillingAddress()->getFirstname();
+	      $orderDetails['customer_last_name']    = $order->getBillingAddress()->getLastname();
+	      $orderDetails['customer_name']         = $order->getBillingAddress()->getName();     
+	    }
+
+	    if ($order->getDiscountAmount()) {
+	      $orderDetails['discount_amount'] = $priceFormatter->format($order->getDiscountAmount());
+	    }
+	    if ($order->getCouponCode()) {
+	      $orderDetails['coupons'] = $order->getCouponCode();
+	    }
+	    if($order->getRemoteIp()){
+	      $orderDetails['user_ip'] = $order->getRemoteIp();
+	    }
+	    if ($order->getCreatedAt()) {
+	      $orderDetails['order_time'] = $order->getCreatedAt();
+	    }
+
+	    foreach ($order->getAllItems() as $item) 
+	    {
+	      $orderItem = array(
+		'product_id'    => $item->getProductId(),
+		'product_price' => $priceFormatter->format($item->getPrice()) ? $priceFormatter->format($item->getPrice()) : 
+				                    $priceFormatter->format($item->getProduct()->getFinalPrice()),
+		'product_name'  => $item->getName(),
+		'product_url'   => $item->getProduct()->getProductUrl(),
+		'product_sku'   => $item->getSku(),
+		'qty'  	   	=> (int)$item->getQtyOrdered(),
+		'product_type'	=> $item->getProductType()
+	      );
+	      $orderDetails['items'][] = $orderItem;      
+	    }  
+	    
+            array_push($orderDetailsForImport, $orderDetails);
+          }
+       }
+       
       $this->getResponse()
-        ->setBody(json_encode(array('products' => $products,'version' => $version, 'total_product_count' => $totalProductCount)))
+        ->setBody(json_encode(array('orders' => $orderDetailsForImport,'version' => $version, 'total_order_count' => $totalOrdersCount)))
         ->setHttpResponseCode(200)
         ->setHeader('Content-type', 'application/json', true);
 

@@ -78,4 +78,35 @@ class Increasingly_Analytics_ImportLogsController extends Mage_Core_Controller_F
     }
 }
 
+  public function getIncreasinglyLogsAction() 
+  {
+    try 
+    {
+        $errorLines = "";
+              
+	/* increasingly log */
+	$increasinglyLogFilePath = Mage::getBaseDir('log')."/Increasingly_Analytics.log";
+   
+	if(file_exists($increasinglyLogFilePath))
+	{ 
+           $errorLines = $errorLines.file_get_contents($increasinglyLogFilePath);
+        }
+
+       $this->getResponse()
+      ->setBody($errorLines)
+      ->setHttpResponseCode(200)
+      ->setHeader('Content-type', 'application/text', true);
+      
+    }
+    catch(Exception $e) {
+
+    Mage::log($e->getMessage(), null, 'Increasingly_Analytics.log');
+
+    $this->getResponse()
+    ->setBody(json_encode(array('status' => 'error', 'message' => $e->getMessage(), 'version' => $version)))
+    ->setHttpResponseCode(500)
+    ->setHeader('Content-type', 'application/json', true);
+    }
+  }
+
 }

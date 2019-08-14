@@ -40,17 +40,9 @@ class Increasingly_Analytics_Helper_ProductFormatter extends Mage_Core_Helper_Ab
       $dateFormatter = Mage::helper('increasingly_analytics/DateFormatter');
 
       $productData = array(
-        'product_id'      =>  $product->getId(),
-        //'product_sku'     =>  $product->getSku(),
-        //'product_name'    =>  $product->getName(),
-        'categories'      =>  array(),
-        //'currency'      =>  Mage::app()->getStore()->getDefaultCurrencyCode(),
-       // 'product_price'   =>  $priceFormatter->format($product->getPrice()),
-       // 'special_price'   =>  $priceFormatter->format($product->getSpecialPrice()),                
-        'product_url'     =>  $product->getProductUrl(),
-        //'description'     =>  $product->getDescription(),
-        //'short_description'  =>  $product->getShortDescription(),
-        //'status'        =>  (int)$product->getStatus(),
+        'product_id'      =>  $product->getId(),     
+        'categories'      =>  array(),           
+        'product_url'     =>  $product->getProductUrl(),    
         'product_type'  =>  $product->getTypeId(), 
         'created_at'    =>  $dateFormatter->getFormattedDate($product->getCreatedAt()),
         'updated_at'    =>  $dateFormatter->getFormattedDate($product->getUpdatedAt()) 
@@ -96,13 +88,12 @@ class Increasingly_Analytics_Helper_ProductFormatter extends Mage_Core_Helper_Ab
       {
         $productDefaultImage = $product->getData('image');
         if(!empty($productDefaultImage) && $productDefaultImage !== 'no_selection')
-        {
-          //$productData['image_url'] =  $product->getImageUrl();
+        {          
            $productData['image_url'] =  Mage::getModel('catalog/product_media_config')->getMediaUrl($product->getImage());
         }
         else
         {
-          $productData['image_url'] = '';
+          $productData['image_url'] = $product->getImageUrl();
         }
        }
 
@@ -241,9 +232,14 @@ class Increasingly_Analytics_Helper_ProductFormatter extends Mage_Core_Helper_Ab
       {
        foreach($otherImages as $img)
        {
-         if(!empty($productDefaultImage) && $img->getFile() != $productDefaultImage)
+         if(!empty($productDefaultImage))
          {
-           $productData['other_image_list'][] = $img->getUrl();
+           if($img->getFile() != $productDefaultImage){
+           	$productData['other_image_list'][] = $img->getUrl();
+           }
+         }
+         else{
+	   $productData['other_image_list'][] = $img->getUrl();
          }
        }
       } 
