@@ -431,6 +431,30 @@ public function trackNewOrder(Varien_Event_Observer $observer)
 
 
   /**
+  * Send order update information 
+  *
+  */
+  public function updateOrder(Varien_Event_Observer $observer)
+  {
+    try 
+    {
+      $helper = Mage::helper('increasingly_analytics');
+
+      if ($helper->isEnabled())
+      {
+        $order = $observer->getOrder();
+        $orderDetails = $helper->buildOrderDetailsData($order);
+        $helper->increasinglyApi($orderDetails,'order','track',$helper->getApiToken(),$helper->getApiSecret());
+      }
+
+    }
+    catch(Exception $e)
+    {
+      Mage::log("Update order tracking - " . $e->getMessage(), null, 'Increasingly_Analytics.log');
+    }
+  }
+
+  /**
   * Send product update information 
   *
   */
