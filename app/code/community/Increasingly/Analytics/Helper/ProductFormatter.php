@@ -246,6 +246,8 @@ class Increasingly_Analytics_Helper_ProductFormatter extends Mage_Core_Helper_Ab
 
       }
 
+      $inventoryDetails = $stock->getData();
+      $productData['inventory_details'] = $inventoryDetails;
      
     } 
     catch(Exception $e)

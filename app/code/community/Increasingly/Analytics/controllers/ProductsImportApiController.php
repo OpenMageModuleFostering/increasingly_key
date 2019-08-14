@@ -62,7 +62,7 @@ class Increasingly_Analytics_ProductsImportApiController extends Mage_Core_Contr
               'product_id'      =>  $product->getId(),      
               'categories'      =>  array(),                   
               'product_url'     =>  $product->getProductUrl(),     
-              'product_type'  =>  $product->getTypeId(), 
+              'product_type_name'  =>  $product->getTypeId(), 
               'created_at'    =>  $product->getCreatedAt(),
               'updated_at'    =>  $product->getUpdatedAt() 
               );
@@ -95,7 +95,7 @@ class Increasingly_Analytics_ProductsImportApiController extends Mage_Core_Contr
              	}
              	else
              	{                  
-              	  $productData[$attribute->getAttributecode()] = $attributeValue;
+              	  $productData[$attributeCode] = $attributeValue;
              	}
 	      }
               catch(Exception $e)
@@ -104,7 +104,8 @@ class Increasingly_Analytics_ProductsImportApiController extends Mage_Core_Contr
               }
            }
 
-	   if($productData['product_type'] == "configurable") 
+          
+	   if($productData['product_type_name'] == "configurable") 
       	   {
              $configurableProducts = Mage::getModel('catalog/product_type_configurable')->getChildrenIds($productData['product_id']);
              $configurable_items = array();
@@ -118,9 +119,12 @@ class Increasingly_Analytics_ProductsImportApiController extends Mage_Core_Contr
 	     }
 
 	     $productData['associated_products'] = $configurable_items;
+            
+             $productAttributeOptions = $product->getTypeInstance(true)->getConfigurableAttributesAsArray($product);
+             $productData['product_attribute_options'] = $productAttributeOptions;
 	   }
 
-      	  if($productData['product_type'] == "grouped") 
+      	  if($productData['product_type_name'] == "grouped") 
           {
             $groupedProducts = Mage::getModel('catalog/product_type_grouped')->getChildrenIds($productData['product_id']);
             $grouped_items = array();
@@ -135,7 +139,7 @@ class Increasingly_Analytics_ProductsImportApiController extends Mage_Core_Contr
 	    $productData['associated_products'] = $grouped_items;
           }
 
-          if($productData['product_type'] == "bundle")
+          if($productData['product_type_name'] == "bundle")
           {
 	     $selectionCollection = $product->getTypeInstance(true)->getSelectionsCollection(
 		  $product->getTypeInstance(true)->getOptionsIds($product), $product);
@@ -174,13 +178,17 @@ class Increasingly_Analytics_ProductsImportApiController extends Mage_Core_Contr
 
 	  $categories = $product->getCategoryCollection()
 	      ->addAttributeToSelect('id')
-	      ->addAttributeToSelect('name');
-
+	      ->addAttributeToSelect('name')
+	      ->addAttributeToSelect('path')
+	      ->addAttributeToSelect('level');
+	
 	  foreach($categories as $category) 
 	  {
 	     $categoryInfo = array();
 	     $categoryInfo['id'] = $category->getId();
 	     $categoryInfo['name'] = $category->getName();
+             $categoryInfo['path'] = $category->getPath();
+             $categoryInfo['level'] = $category->getLevel();
 	     $productData['categories'][] = $categoryInfo;
 	  }
 
@@ -202,6 +210,9 @@ class Increasingly_Analytics_ProductsImportApiController extends Mage_Core_Contr
          	}
        	     }
       	  }
+         
+          $inventoryDetails = $stock->getData();
+          $productData['inventory_details'] = $inventoryDetails;
 
           $products[] = $productData;
 

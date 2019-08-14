@@ -32,7 +32,7 @@
 <config>
   <modules>
     <Increasingly_Analytics>
-      <version>1.0.12</version>	
+      <version>1.0.13</version>	
     </Increasingly_Analytics>
   </modules>
   <global>
