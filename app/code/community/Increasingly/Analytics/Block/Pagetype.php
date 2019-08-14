@@ -77,4 +77,9 @@ class Increasingly_Analytics_Block_Pagetype extends Mage_Core_Block_Template
     $formKey = Mage::getSingleton('core/session')->getFormKey();
     return $formKey;
   }
+
+  public function getStoreDetails(){
+    $store_url = Mage::getBaseUrl(Mage_Core_Model_Store::URL_TYPE_WEB);
+    return $store_url;
+  }
 }

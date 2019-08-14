@@ -53,6 +53,7 @@ class Increasingly_Analytics_ProductsApiController extends Mage_Core_Controller_
         'price',
         'final_price',
         'special_price',
+        'description',
         'short_description',
         'color',
         'weight',

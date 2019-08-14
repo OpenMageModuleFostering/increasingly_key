@@ -211,13 +211,24 @@ class Increasingly_Analytics_Helper_Data extends Mage_Core_Helper_Abstract
   */
   public function deleteBundleOnProductDeleteFromCart($product_id){
     try { 
+      
       $cookieValue = Mage::getModel('core/cookie')->get('ivid'); 
       $userBundleCollection = Mage::getModel('increasingly_analytics/bundle')->getCollection()->addFieldToFilter('increasingly_visitor_id',$cookieValue);
+
       if(count($userBundleCollection) >= 1){
-        $userBundle = Mage::getModel('increasingly_analytics/bundle');
-        $userBundle->setId($userBundleCollection->getFirstItem()->getId())->delete();
-        $userBundle->save($cookieValue);
-      }
+
+        foreach($userBundleCollection as $bundle){
+       
+	 $isProductInBundle = in_array($product_id, explode(',',$bundle->getProductIds()));	
+         
+         if(!is_null($isProductInBundle) && !empty($isProductInBundle) && $isProductInBundle == true)
+         {
+           $userBundle = Mage::getModel('increasingly_analytics/bundle');
+           $userBundle->setId($bundle->getId())->delete();           
+         }
+
+        }
+     }
     } 
     catch (Exception $e) 
     {
@@ -278,7 +289,8 @@ class Increasingly_Analytics_Helper_Data extends Mage_Core_Helper_Abstract
       $jsonData = json_encode($postData);        
       $client->setRawData($jsonData, 'application/json');
       $response = $client->request('POST');      
-      $result = json_decode($response->getBody());    
+      $result = json_decode($response->getBody());  
+       
       if ($response->isError()) {
           Mage::log($response->getBody(), null, 'Increasingly_Analytics.log');
       }  
@@ -332,6 +344,8 @@ class Increasingly_Analytics_Helper_Data extends Mage_Core_Helper_Abstract
   {
     return Mage::getStoreConfig(self::XML_PATH_IMAGE_VERSION, $store);
   }
+
+  
 
    
 }

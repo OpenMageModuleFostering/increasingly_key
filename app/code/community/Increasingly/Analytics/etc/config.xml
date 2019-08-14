@@ -117,7 +117,16 @@
             <method>productDelete</method>
           </product_delete>
         </observers>
-      </catalog_product_delete_commit_after>       
+      </catalog_product_delete_commit_after>     
+      <admin_system_config_changed_section_carriers>
+         <observers>
+          <import_shipping_details>
+            <type>singleton</type>
+            <class>Increasingly_Analytics_Model_Observer</class>
+            <method>importShippingDetails</method>
+          </import_shipping_details>
+        </observers>
+      </admin_system_config_changed_section_carriers>  
     </events>
     <models>
       <increasingly_analytics>

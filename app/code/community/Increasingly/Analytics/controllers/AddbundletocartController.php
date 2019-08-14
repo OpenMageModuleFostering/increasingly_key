@@ -48,6 +48,7 @@ class Increasingly_Analytics_AddbundletocartController extends Mage_Core_Control
       $outOfStockProducts = [];
       $productErrorStr = "";
       $productSuccessStr = "";
+
       if($current_page == "checkout_cart_index"){
         $quote = Mage::getModel('checkout/cart')->getQuote();
 
@@ -150,6 +151,27 @@ class Increasingly_Analytics_AddbundletocartController extends Mage_Core_Control
         $product = Mage::getModel('catalog/product');
         $product->load($productId);
         $this->cart->addProduct($product,array('qty' => 1));
+
+         for ($x = 0; $x < count($data[0]["params"]); $x++) {
+          $productIds[$x] = trim($data[0]["params"][$x]["product_id"]);
+        } 
+	$productIdsStr = implode(',',$productIds);
+
+        $cookieValue = Mage::getModel('core/cookie')->get('ivid');   
+          $userBundleCollection = Mage::getModel('increasingly_analytics/bundle')->getCollection()
+            ->addFieldToFilter('bundle_id', $bundle_id)
+            ->addFieldToFilter('increasingly_visitor_id',$cookieValue);
+          
+          //Check if bundle already exists,add if not already present
+          if(count($userBundleCollection) < 1){
+            $userBundle = Mage::getModel('increasingly_analytics/bundle');
+            $userBundle->setBundleId(intval($bundle_id));
+            $userBundle->setProductIds($productIdsStr);
+            $userBundle->setIncreasinglyVisitorId($cookieValue);
+            $userBundle->setDiscountPrice($discountPrice);
+            $userBundle->setTotalPrice($totalPrice);
+            $userBundle->save();
+          }
       }
     }
     catch(Exception $e)

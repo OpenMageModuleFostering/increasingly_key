@@ -506,4 +506,40 @@ public function trackNewOrder(Varien_Event_Observer $observer)
       Mage::log("Product delete tracking - " . $e->getMessage(), null, 'Increasingly_Analytics.log');
     }
   }
+
+   public function importShippingDetails(Varien_Event_Observer $observer)
+   {  
+      try
+      {
+	  $helper = Mage::helper('increasingly_analytics');
+          $priceFormatter = Mage::helper('increasingly_analytics/PriceFormatter');
+    
+          if ($helper->isEnabled())
+          {
+             $data = array();
+	     $carriers = array();             
+	     $config = Mage::getStoreConfig('carriers', Mage::app()->getStore()->getId());
+ 
+	     foreach ($config as $code => $carrierConfig) 
+	     {           
+	         if ($carrierConfig['model'] == 'shipping/carrier_freeshipping') 
+		 {              
+                    $data['is_free_shipping_active'] = Mage::getStoreConfigFlag('carriers/'.$code.'/active', $store);
+                    $data['free_shipping_subtotal'] = $priceFormatter->format($carrierConfig['free_shipping_subtotal']);
+	            $data['free_shipping_title'] = $carrierConfig['title'];                    		      
+		 }
+	     }  
+          
+             $helper->increasinglyApi($data,'shipping_details_import','track',$helper->getApiToken(),$helper->getApiSecret());
+                      
+          }    
+         
+      }
+      catch(Exception $e)
+      {
+        Mage::log("Import shipping details - " . $e->getMessage(), null, 'Increasingly_Analytics.log');
+      }
+
+   }
+
 }

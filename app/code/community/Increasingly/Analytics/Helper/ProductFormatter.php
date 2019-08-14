@@ -48,7 +48,8 @@ class Increasingly_Analytics_Helper_ProductFormatter extends Mage_Core_Helper_Ab
         'product_price'   =>  $priceFormatter->format($product->getPrice()),
         'special_price'   =>  $priceFormatter->format($product->getSpecialPrice()),                
         'product_url'     =>  $product->getProductUrl(),
-        'description'     =>  $product->getShortDescription(),
+        'description'     =>  $product->getDescription(),
+        'short_description'  =>  $product->getShortDescription(),
         'status'        =>  (int)$product->getStatus(),
         'product_type'  =>  $product->getTypeId(), 
         'created_at'    =>  $dateFormatter->getFormattedDate($product->getCreatedAt()),
@@ -183,7 +184,7 @@ class Increasingly_Analytics_Helper_ProductFormatter extends Mage_Core_Helper_Ab
            $productData['other_image_list'][] = $img->getUrl();
          }
        }
-      }
+      }      
     } 
     catch(Exception $e)
     {
