@@ -290,27 +290,35 @@ class Increasingly_Analytics_Model_Observer
   * @return void
   */
   public function applyCartDiscount(Varien_Event_Observer $observer)
-  {     
+  { 
     try
     {  
       $bundle_product_ids = [];
       $quote_product_ids = [];
+      //Increasingly Cookie
       $cookieValue = Mage::getModel('core/cookie')->get('ivid');
+      // Database table - "BundleCollection" that stores bundled products in Magento along with discount
+      // An entry is added to this table when user adds a bundle to the cart
+      // Colums Bundle ID,Product IDs,Discount
       $userBundleCollection = Mage::getModel('increasingly_analytics/bundle')->getCollection()->addFieldToFilter('increasingly_visitor_id',$cookieValue);
+      //Get all Quote Products
       $items = $observer->getEvent()->getQuote()->getAllItems();
       $eligibleProducts = [];
       $discount = 0;
+      //Get all the Quote Product Ids
       foreach ($items as $item) {
         array_push($quote_product_ids, $item->getProductId());
       }
+      //Get the discount from the Bundle's collection to apply to the subtotal
       foreach ($userBundleCollection as $bundle) {
         //First Bundle products
         $bundle_product_ids = explode(',', $bundle->getProductIds()); 
+        //Get discount amount for all the products in the quote
         $productsIds = array_intersect($quote_product_ids, $bundle_product_ids);
         if(count($productsIds) == count($bundle_product_ids) )
           $discount += $bundle->getDiscountPrice();
       }
-
+      //If the quote products has discount,apply the discount
       if($discount > 0){
         $quote=$observer->getEvent()->getQuote();
         $quoteid=$quote->getId();
@@ -341,26 +349,27 @@ class Increasingly_Analytics_Model_Observer
 
               $quote->setSubtotal((float) $quote->getSubtotal() + $address->getSubtotal());
               $quote->setBaseSubtotal((float) $quote->getBaseSubtotal() + $address->getBaseSubtotal());
-
+              //Update Subtotal with the Discount
               $quote->setSubtotalWithDiscount(
                   (float) $quote->getSubtotalWithDiscount() + $address->getSubtotalWithDiscount()
               );
+              //Update Base Subtotal with Discount
               $quote->setBaseSubtotalWithDiscount(
                   (float) $quote->getBaseSubtotalWithDiscount() + $address->getBaseSubtotalWithDiscount()
               );
 
               $quote->setGrandTotal((float) $quote->getGrandTotal() + $address->getGrandTotal());
               $quote->setBaseGrandTotal((float) $quote->getBaseGrandTotal() + $address->getBaseGrandTotal());
-
+              //Save the Quote
               $quote ->save(); 
-
+              //Set Grand Total,Base Grand Toal,Subtotal and Base Subtotal with the discounted amount
               $quote->setGrandTotal($quote->getBaseSubtotal()-$discountAmount)
               ->setBaseGrandTotal($quote->getBaseSubtotal()-$discountAmount)
               ->setSubtotalWithDiscount($quote->getBaseSubtotal()-$discountAmount)
               ->setBaseSubtotalWithDiscount($quote->getBaseSubtotal()-$discountAmount)
               ->save(); 
 
-
+              //Display the discount applied with the Custom Discount attribute in the cart page
               if($address->getAddressType()==$canAddItems) {
               //echo $address->setDiscountAmount; exit;
                $address->setSubtotalWithDiscount((float) $address->getSubtotalWithDiscount()-$discountAmount);
@@ -381,7 +390,7 @@ class Increasingly_Analytics_Model_Observer
             } //end: foreach
             //echo $quote->getGrandTotal();
 
-            foreach($quote->getAllItems() as $item){ 
+            foreach($quote->getAllItems() as $item){
               //We apply discount amount based on the ratio between the GrandTotal and the RowTotal
               $rat=$item->getPriceInclTax()/$total;
               $ratdisc=$discountAmount*$rat;
@@ -393,15 +402,8 @@ class Increasingly_Analytics_Model_Observer
       }
     }
     catch(Exception $e)
-    {      
-      Mage::log("Apply discount method - " . $e->getMessage(), null, 'Increasingly_Analytics.log');
-      $error_info = array(
-         'method' => 'ApplyDiscountMethod',
-         'error_message' => $e->getMessage()
-      	);
-
-      $helper = Mage::helper('increasingly_analytics');
-      $helper->addEvent('track', 'track_error', $error_info);
+    {
+      Mage::log("Remove from cart tracking - " . $e->getMessage(), null, 'Increasingly_Analytics.log');
     }
 
   }
@@ -413,33 +415,26 @@ class Increasingly_Analytics_Model_Observer
 */
 public function trackNewOrder(Varien_Event_Observer $observer)
 {
-  $helper = Mage::helper('increasingly_analytics');
   try 
   {
     
-    
+    $helper = Mage::helper('increasingly_analytics');
     
     if ($helper->isEnabled())
-    {
-	$data = array();
-	$order = $observer->getOrder();
+	  {
+	    $data = array();
+	    $order = $observer->getOrder();
 	   
-        if ($order->getId()) 
-        {
-	  $data = $helper->buildOrderDetailsData($order);
-	  $helper->addEvent('track', 'order', $data);
-	  $helper->deleteBundleOnPurchase();
-	}
+      if ($order->getId()) 
+      {
+	      $data = $helper->buildOrderDetailsData($order);
+	      $helper->addEvent('track', 'order', $data);
+	    }
     }
-  } 
+	} 
   catch(Exception $e)
-  {    
+  {
     Mage::log("New order tracking - " . $e->getMessage(), null, 'Increasingly_Analytics.log');
-    $error_info = array(
-         'method' => 'trackNewOrderMethod',
-         'error_message' => $e->getMessage()
-      	);      
-    $helper->addEvent('track', 'track_error', $error_info);
   }
 }
 

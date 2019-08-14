@@ -68,31 +68,18 @@ class Increasingly_Analytics_Helper_ProductFormatter extends Mage_Core_Helper_Ab
          $productData['special_price'] = $priceFormatter->format($product->getSpecialPrice());  
        } 
      
-       if ($product->hasData('description')) 
+       
+       if($product->getResource()->getAttribute('description'))
        {
-         $productData['description'] = $product->getData('description');
+    	 $productData['description'] = Mage::getModel('catalog/product')
+			 	->load($product->getId())->getDescription();  
        }
-
-       if($productData['description'] == null || empty($productData['description']))
-       {
-	  if($product->getResource()->getAttribute('description'))
-	  {
-	    $productData['description'] = $product->getDescription();  
-	  }
-       }  
  
-       if ($product->hasData('short_description')) 
+       if($product->getResource()->getAttribute('short_description'))
        {
-      	  $productData['short_description'] = $product->getData('short_description');
-       }
-
-       if($productData['short_description'] == null || empty($productData['short_description']))
-       {
-          if($product->getResource()->getAttribute('short_description'))
-          {
-            $productData['short_description'] = $product->getShortDescription();  
-          }  
-       }
+   	 $productData['short_description'] = Mage::getModel('catalog/product')
+			 	->load($product->getId())->getShortDescription();  
+       }  
 
        if($product->getResource()->getAttribute('status'))
        {
@@ -102,15 +89,24 @@ class Increasingly_Analytics_Helper_ProductFormatter extends Mage_Core_Helper_Ab
       $productDefaultImage = '';
       if($product->getResource()->getAttribute('image'))
       {
-        $productDefaultImage = $product->getData('image');
-        if(!empty($productDefaultImage) && $productDefaultImage !== 'no_selection')
-        {          
-           $productData['image_url'] =  Mage::getModel('catalog/product_media_config')->getMediaUrl($product->getImage());
-        }
-        else
-        {
-          $productData['image_url'] = $product->getImageUrl();
-        }
+         try
+         {
+	    $productDefaultImage = Mage::getModel('catalog/product_media_config')->getMediaUrl(Mage::getModel('catalog/product')
+				 	->load($product->getId())->getImage());
+
+            if(!empty($productDefaultImage) && $productDefaultImage !== 'no_selection')
+	    {          
+	      $productData['image_url'] =  $productDefaultImage;
+	    }
+	    else
+	    {
+	      $productData['image_url'] = $product->getImageUrl();
+	    }
+         }
+         catch(Exception $e)
+         {
+           Mage::log($e->getMessage(), null, 'Increasingly_Analytics.log');
+         }
        }
        
        $productData['original_image_url'] = $this->buildImageUrl($product);
@@ -278,18 +274,26 @@ class Increasingly_Analytics_Helper_ProductFormatter extends Mage_Core_Helper_Ab
 
   protected function buildImageUrl($product)
   {
-    $store = Mage::app()->getStore();
-    $url = null;   
-    $helper = Mage::helper('increasingly_analytics');
-    $imageVersion = $helper->getProductImageVersion($store);
-    $img = $product->getData($imageVersion);
-    $img = $this->isValidImage($img) ? $img : $product->getData('image');
-    if ($this->isValidImage($img)) {
-        // We build the image url manually in order get the correct base url
+    $url = null;
+
+    try
+    {
+       $store = Mage::app()->getWebsite(true)->getDefaultGroup()->getDefaultStore();    
+       $helper = Mage::helper('increasingly_analytics');
+       $imageVersion = $helper->getProductImageVersion($store);
+       $img = $product->getData($imageVersion);
+       $img = $this->isValidImage($img) ? $img : Mage::getModel('catalog/product')->load($product->getId())->getImage();
+
+       if ($this->isValidImage($img)) {        
         $baseUrl = rtrim($store->getBaseUrl('media'), '/');
         $file = str_replace(DS, '/', $img);
         $file = ltrim($file, '/');
         $url = $baseUrl.'/catalog/product/'.$file;
+       }
+    }
+    catch(Exception $e)
+    {
+      Mage::log($e->getMessage(), null, 'Increasingly_Analytics.log');
     }
     return $url;
   }

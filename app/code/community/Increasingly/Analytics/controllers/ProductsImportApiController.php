@@ -104,25 +104,14 @@ class Increasingly_Analytics_ProductsImportApiController extends Mage_Core_Contr
               }
            }
 
-           if ($product->hasData('description')) 
-           {
-             $productData['description'] = $product->getData('description');
-           }       
-           
-	   if($productData['description'] == null || empty($productData['description']))
-           {	  
-	     $productData['description'] = $product->getDescription();  
-	   }
-
-           if ($product->hasData('short_description')) 
-       	   {
-      	      $productData['short_description'] = $product->getData('short_description');
-           }
-
-           if($productData['short_description'] == null || empty($productData['short_description']))
-           {         
-            $productData['short_description'] = $product->getShortDescription(); 
-           }
+             
+	   $productData['description'] = Mage::getModel('catalog/product')
+				 	->load($product->getId())->getDescription();  
+	  
+                   
+           $productData['short_description'] = Mage::getModel('catalog/product')
+				 	->load($product->getId())->getShortDescription(); 
+          
 
 	   if($productData['product_type_name'] == "configurable") 
       	   {

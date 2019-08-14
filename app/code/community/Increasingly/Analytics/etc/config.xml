@@ -32,7 +32,7 @@
 <config>
   <modules>
     <Increasingly_Analytics>
-      <version>1.0.17</version>	
+      <version>1.0.18</version>	
     </Increasingly_Analytics>
   </modules>
   <global>
@@ -64,7 +64,7 @@
           </remove_from_cart>
         </observers>
       </sales_quote_remove_item>
-      <sales_order_place_after>
+      <checkout_type_onepage_save_order_after>
         <observers>
           <place_order>
             <type>singleton</type>
@@ -72,7 +72,7 @@
             <method>trackNewOrder</method>
           </place_order>
         </observers>
-      </sales_order_place_after>     
+      </checkout_type_onepage_save_order_after>     
       <sales_quote_collect_totals_after>
         <observers>
           <apply_cart_discount>
