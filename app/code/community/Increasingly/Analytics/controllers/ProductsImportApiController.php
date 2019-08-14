@@ -104,7 +104,7 @@ class Increasingly_Analytics_ProductsImportApiController extends Mage_Core_Contr
               }
            }
 
-           if ($product->hasData('description') && $productData['description'] == null) 
+           if ($product->hasData('description')) 
            {
              $productData['description'] = $product->getData('description');
            }       
@@ -114,7 +114,7 @@ class Increasingly_Analytics_ProductsImportApiController extends Mage_Core_Contr
 	     $productData['description'] = $product->getDescription();  
 	   }
 
-           if ($product->hasData('short_description') && $productData['short_description'] == null) 
+           if ($product->hasData('short_description')) 
        	   {
       	      $productData['short_description'] = $product->getData('short_description');
            }

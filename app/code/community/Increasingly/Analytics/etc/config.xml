@@ -32,7 +32,7 @@
 <config>
   <modules>
     <Increasingly_Analytics>
-      <version>1.0.16</version>	
+      <version>1.0.17</version>	
     </Increasingly_Analytics>
   </modules>
   <global>
@@ -205,41 +205,36 @@
      </adminhtml>
    </routers>
   </admin>   
-  <adminhtml>
-    <acl>
+ <adminhtml>
+   <acl>
       <resources>
-        <admin>
-          <children>
-            <system>
-              <children>
-                <config>
-                  <children>
-                    <increasingly_analytics>
-                      <title>Increasingly Configuration</title>
-                    </increasingly_analytics>
-                  </children>
-                </config>
-              </children>
-            </system>
-          </children>
-        </admin>
+	 <all>
+           <title>Allow Everything</title>
+         </all>
+         <admin>
+            <children>
+              <increasingly>
+                <title>Increasingly Configuration</title>
+              </increasingly>
+            </children>
+         </admin>
       </resources>
-    </acl>
-    <layout>
+   </acl>
+   <layout>
       <updates>
-       <increasingly_analytics>
-        <file>increasingly_analytics.xml</file>
-      </increasingly_analytics>
-    </updates>
-  </layout>
-  <menu>
-    <increasingly>
-      <title>Increasingly</title>
-      <sort_order>70</sort_order>
-      <action>adminhtml/DataIntegration/index</action>
-    </increasingly>
-  </menu>
-  </adminhtml>
+         <increasingly_analytics>
+            <file>increasingly_analytics.xml</file>
+         </increasingly_analytics>
+      </updates>
+   </layout>
+   <menu>
+      <increasingly>
+         <title>Increasingly</title>
+         <sort_order>70</sort_order>
+         <action>adminhtml/DataIntegration/index</action>
+      </increasingly>
+   </menu>
+</adminhtml>
   <default>
     <increasingly_analytics>
       <settings>
