@@ -103,7 +103,7 @@ class Increasingly_Analytics_Model_Observer
     	    $data =  array(
   	        'product_id'    => $product->getId(),
   	        'product_name'  => $product->getName(),
-  	        'product_price' => $priceFormatter->format($product->getFinalPrice()),
+  	        'product_price' => $priceFormatter->format($product->getPrice()),
   	        'product_url'   => $product->getProductUrl(),
             'product_sku'   => $product->getSku(),
     	    );
@@ -216,11 +216,11 @@ class Increasingly_Analytics_Model_Observer
       if ($cartProduct->isGrouped() || $cartProduct->isConfigurable()) {
         $product = Mage::getModel('catalog/product')->load($productId);
 
-        $data['product_price'] 	 = $priceFormatter->format($product->getFinalPrice()); 
+        $data['product_price'] 	 = $priceFormatter->format($product->getPrice()); 
         $data['option_product_id']    = $product->getId();
         $data['option_product_sku']   = $product->getSku();
         $data['option_product_name']  = $product->getName();
-        $data['option_product_price'] = $priceFormatter->format($product->getFinalPrice());
+        $data['option_product_price'] = $priceFormatter->format($product->getPrice());
       }
       
     	if(Mage::getSingleton('customer/session')->isLoggedIn()) {

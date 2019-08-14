@@ -31,7 +31,7 @@
 class Increasingly_Analytics_ProductsApiController extends Mage_Core_Controller_Front_Action 
 {
  
-  public function productsAction() 
+ public function productsAction() 
   {
     try 
     {
@@ -45,24 +45,74 @@ class Increasingly_Analytics_ProductsApiController extends Mage_Core_Controller_
       $products = array();
       $productFormatHelper = Mage::helper('increasingly_analytics/ProductFormatter');
 
-      $attributes = array(
-        'name',
-        'sku',
-        'image',
-        'manufacturer',
-        'price',
-        'final_price',
-        'special_price',
-        'description',
-        'short_description',
-        'color',
-        'weight',
-        'size'          
-        );
+      // $attributes = array(
+      //   'name',
+      //   'sku',
+      //   'image',
+      //   'manufacturer',
+      //   'price',
+      //   'final_price',
+      //   'special_price',
+      //   'description',
+      //   'short_description',
+      //   'color',
+      //   'weight',
+      //   'size'          
+      //   );
 
       $limit = $this->getRequest()->getParam('limit', 200);
       $offset = $this->getRequest()->getParam('offset', 1);
-
+      $tempAttributes = array();
+      $productsCollection = Mage::getModel('catalog/product')->getCollection();
+      $tempProduct = $productsCollection->getFirstItem(); 
+      $attributes = $tempProduct->getAttributes(); 
+      foreach ($attributes as $attribute) { 
+        if($attribute->getAttributeCode() == 'name')      
+        {
+            array_push($tempAttributes,'name');     
+        }
+        if($attribute->getAttributeCode() == 'sku')      
+        {
+            array_push($tempAttributes,'sku');
+        }
+        if($attribute->getAttributeCode() == 'image')      
+        {
+            array_push($tempAttributes,'image');     
+        }
+        if($attribute->getAttributeCode() == 'manufacturer')      
+        {
+            array_push($tempAttributes,'manufacturer');
+        }   
+        if($attribute->getAttributeCode() == 'price')      
+        {
+            array_push($tempAttributes,'price');     
+        }       
+        if($attribute->getAttributeCode() == 'special_price')      
+        {
+            array_push($tempAttributes,'special_price');
+        }  
+        if($attribute->getAttributeCode() == 'description')      
+        {
+            array_push($tempAttributes,'description');
+        }  
+        if($attribute->getAttributeCode() == 'short_description')      
+        {
+            array_push($tempAttributes,'short_description');
+        } 
+        if($attribute->getAttributeCode() == 'color')      
+        {
+            array_push($tempAttributes,'color');
+        }  
+        if($attribute->getAttributeCode() == 'weight')      
+        {
+            array_push($tempAttributes,'weight');
+        }  
+        if($attribute->getAttributeCode() == 'size')      
+        {
+            array_push($tempAttributes,'size');
+        }      
+      }      
+      $attributes = $tempAttributes;
       $productsCollection = Mage::getModel('catalog/product')->getCollection();
 
       $productsCollection->addAttributeToSelect($attributes)->getSelect()->limit($limit, $offset);
