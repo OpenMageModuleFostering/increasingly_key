@@ -184,7 +184,10 @@ class Increasingly_Analytics_AddbundletocartController extends Mage_Core_Control
   *
   */
   public function addToCart($data){
-
+ 
+    $helper = Mage::helper('increasingly_analytics');
+    $hasBundleAddedToCartSuccessfully = false;
+    $cart_bundle_data = array();  
     $redirectUrl = "";
     try{
       
@@ -202,6 +205,8 @@ class Increasingly_Analytics_AddbundletocartController extends Mage_Core_Control
         $productErrorStr = "";
         $productSuccessStr = "";
         $quantity = 1;
+        $cart_bundle_data['bundle_id'] = $bundle_id; 
+	$cart_bundle_data['discountPrice'] = $discountPrice;	
 
         for ($x = 0; $x < count($data[0]["params"]); $x++) {
           $productIds[$x] = trim($data[0]["params"][$x]["product_id"]);
@@ -257,7 +262,7 @@ class Increasingly_Analytics_AddbundletocartController extends Mage_Core_Control
           $userBundleCollection = Mage::getModel('increasingly_analytics/bundle')->getCollection()
             ->addFieldToFilter('bundle_id', $bundle_id)
             ->addFieldToFilter('increasingly_visitor_id',$cookieValue);
-          
+         
           //Check if bundle already exists,add if not already present
           if(count($userBundleCollection) < 1){
             $userBundle = Mage::getModel('increasingly_analytics/bundle');
@@ -270,8 +275,9 @@ class Increasingly_Analytics_AddbundletocartController extends Mage_Core_Control
           }
 
           //Set cart was updated flag
-          Mage::getSingleton('checkout/session')->setCartWasUpdated(true);
-          
+          Mage::getSingleton('checkout/session')->setCartWasUpdated(true); 
+          $hasBundleAddedToCartSuccessfully = true;      	  
+          $helper->addEvent('track', 'bundle_add_to_cart', $cart_bundle_data);          
         }
 
         if($productSuccessStr != "")
@@ -280,16 +286,28 @@ class Increasingly_Analytics_AddbundletocartController extends Mage_Core_Control
         //Error message for the out of stock products
         if($productErrorStr != "")
           Mage::getSingleton('core/session')->addNotice($productErrorStr.' is out of stock');
-
+	        
         //Redirect to the cart
         $this->_redirect('checkout/cart');
         
-      }    
+      } 
+
+      if($hasBundleAddedToCartSuccessfully == false)
+      { 
+        $cart_bundle_data['bundle_data'] = $data;     	  
+        $helper->addEvent('track', 'bundle_add_to_cart_failuer', $cart_bundle_data);   
+      } 
     }
     catch(Exception $e)
-    {
+    {       
       Mage::log("Increasingly addToCart controller - " . $e->getMessage(), null, 'Increasingly_Analytics.log');
-      Mage::getSingleton('core/session')->addNotice($e->getMessage());    
+      Mage::getSingleton('core/session')->addNotice($e->getMessage());   
+      $error_info = array(
+	 'method' => 'AddBundleToCartMethod',
+         'error_message' => $e->getMessage()
+      	);
+
+      $helper->addEvent('track', 'track_error', $error_info); 
       $this->_redirectUrl($redirectUrl);      
     }  
 
