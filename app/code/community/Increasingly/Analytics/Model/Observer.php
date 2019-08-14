@@ -82,7 +82,7 @@ class Increasingly_Analytics_Model_Observer
         // homepage page
         if ($action == 'cms_index_index' || $action == 'cms_page_view') {
           $title = Mage::getSingleton('cms/page')->getTitle();
-          $data = array('page_title' =>  $title);
+                  $data = array('page_title' =>  $title);
           $helper->addEvent('track', 'home_page_visit', $data);
           return;
         }
@@ -103,7 +103,7 @@ class Increasingly_Analytics_Model_Observer
     	    $data =  array(
   	        'product_id'    => $product->getId(),
   	        'product_name'  => $product->getName(),
-  	        'product_price' => $priceFormatter->format($product->getPrice()),
+  	        'product_price' => $priceFormatter->format($product->getFinalPrice()),
   	        'product_url'   => $product->getProductUrl(),
             'product_sku'   => $product->getSku(),
     	    );
@@ -207,7 +207,7 @@ class Increasingly_Analytics_Model_Observer
         'product_id'        => $cartProduct->getId(),
         'product_name'      => $cartProduct->getName(),
         'product_url'       => $cartProduct->getProductUrl(),
-        'product_sku'       => $cartProduct->getSku(),
+          'product_sku'       => $cartProduct->getSku(),
         'product_type'      => $cartProduct->getTypeId(),
         'qty'               => $qty,
         'product_price'     => $priceFormatter->format($cartProduct->getFinalPrice()) 
@@ -216,11 +216,11 @@ class Increasingly_Analytics_Model_Observer
       if ($cartProduct->isGrouped() || $cartProduct->isConfigurable()) {
         $product = Mage::getModel('catalog/product')->load($productId);
 
-        $data['product_price'] 	 = $priceFormatter->format($product->getPrice()); 
+        $data['product_price'] 	 = $priceFormatter->format($product->getFinalPrice()); 
         $data['option_product_id']    = $product->getId();
         $data['option_product_sku']   = $product->getSku();
         $data['option_product_name']  = $product->getName();
-        $data['option_product_price'] = $priceFormatter->format($product->getPrice());
+        $data['option_product_price'] = $priceFormatter->format($product->getFinalPrice());
       }
       
     	if(Mage::getSingleton('customer/session')->isLoggedIn()) {
@@ -295,30 +295,22 @@ class Increasingly_Analytics_Model_Observer
     {  
       $bundle_product_ids = [];
       $quote_product_ids = [];
-      //Increasingly Cookie
       $cookieValue = Mage::getModel('core/cookie')->get('ivid');
-      // Database table - "BundleCollection" that stores bundled products in Magento along with discount
-      // An entry is added to this table when user adds a bundle to the cart
-      // Colums Bundle ID,Product IDs,Discount
       $userBundleCollection = Mage::getModel('increasingly_analytics/bundle')->getCollection()->addFieldToFilter('increasingly_visitor_id',$cookieValue);
-      //Get all Quote Products
       $items = $observer->getEvent()->getQuote()->getAllItems();
       $eligibleProducts = [];
       $discount = 0;
-      //Get all the Quote Product Ids
       foreach ($items as $item) {
         array_push($quote_product_ids, $item->getProductId());
       }
-      //Get the discount from the Bundle's collection to apply to the subtotal
       foreach ($userBundleCollection as $bundle) {
         //First Bundle products
         $bundle_product_ids = explode(',', $bundle->getProductIds()); 
-        //Get discount amount for all the products in the quote
         $productsIds = array_intersect($quote_product_ids, $bundle_product_ids);
         if(count($productsIds) == count($bundle_product_ids) )
           $discount += $bundle->getDiscountPrice();
       }
-      //If the quote products has discount,apply the discount
+
       if($discount > 0){
         $quote=$observer->getEvent()->getQuote();
         $quoteid=$quote->getId();
@@ -349,27 +341,26 @@ class Increasingly_Analytics_Model_Observer
 
               $quote->setSubtotal((float) $quote->getSubtotal() + $address->getSubtotal());
               $quote->setBaseSubtotal((float) $quote->getBaseSubtotal() + $address->getBaseSubtotal());
-              //Update Subtotal with the Discount
+
               $quote->setSubtotalWithDiscount(
                   (float) $quote->getSubtotalWithDiscount() + $address->getSubtotalWithDiscount()
               );
-              //Update Base Subtotal with Discount
               $quote->setBaseSubtotalWithDiscount(
                   (float) $quote->getBaseSubtotalWithDiscount() + $address->getBaseSubtotalWithDiscount()
               );
 
               $quote->setGrandTotal((float) $quote->getGrandTotal() + $address->getGrandTotal());
               $quote->setBaseGrandTotal((float) $quote->getBaseGrandTotal() + $address->getBaseGrandTotal());
-              //Save the Quote
+
               $quote ->save(); 
-              //Set Grand Total,Base Grand Toal,Subtotal and Base Subtotal with the discounted amount
+
               $quote->setGrandTotal($quote->getBaseSubtotal()-$discountAmount)
               ->setBaseGrandTotal($quote->getBaseSubtotal()-$discountAmount)
               ->setSubtotalWithDiscount($quote->getBaseSubtotal()-$discountAmount)
               ->setBaseSubtotalWithDiscount($quote->getBaseSubtotal()-$discountAmount)
               ->save(); 
 
-              //Display the discount applied with the Custom Discount attribute in the cart page
+
               if($address->getAddressType()==$canAddItems) {
               //echo $address->setDiscountAmount; exit;
                $address->setSubtotalWithDiscount((float) $address->getSubtotalWithDiscount()-$discountAmount);
@@ -440,6 +431,30 @@ public function trackNewOrder(Varien_Event_Observer $observer)
 
 
   /**
+  * Send order update information 
+  *
+  */
+  public function updateOrder(Varien_Event_Observer $observer)
+  {
+    try 
+    {
+      $helper = Mage::helper('increasingly_analytics');
+
+      if ($helper->isEnabled())
+      {
+        $order = $observer->getOrder();
+        $orderDetails = $helper->buildOrderDetailsData($order);
+        $helper->increasinglyApi($orderDetails,'order','track',$helper->getApiToken(),$helper->getApiSecret());
+      }
+
+    }
+    catch(Exception $e)
+    {
+      Mage::log("Update order tracking - " . $e->getMessage(), null, 'Increasingly_Analytics.log');
+    }
+  }
+
+  /**
   * Send product update information 
   *
   */
@@ -491,40 +506,4 @@ public function trackNewOrder(Varien_Event_Observer $observer)
       Mage::log("Product delete tracking - " . $e->getMessage(), null, 'Increasingly_Analytics.log');
     }
   }
-
-   public function importShippingDetails(Varien_Event_Observer $observer)
-   {  
-      try
-      {
-	  $helper = Mage::helper('increasingly_analytics');
-          $priceFormatter = Mage::helper('increasingly_analytics/PriceFormatter');
-    
-          if ($helper->isEnabled())
-          {
-             $data = array();
-	     $carriers = array();             
-	     $config = Mage::getStoreConfig('carriers', Mage::app()->getStore()->getId());
- 
-	     foreach ($config as $code => $carrierConfig) 
-	     {           
-	         if ($carrierConfig['model'] == 'shipping/carrier_freeshipping') 
-		 {              
-                    $data['is_free_shipping_active'] = Mage::getStoreConfigFlag('carriers/'.$code.'/active', $store);
-                    $data['free_shipping_subtotal'] = $priceFormatter->format($carrierConfig['free_shipping_subtotal']);
-	            $data['free_shipping_title'] = $carrierConfig['title'];                    		      
-		 }
-	     }  
-          
-             $helper->increasinglyApi($data,'shipping_details_import','track',$helper->getApiToken(),$helper->getApiSecret());
-                      
-          }    
-         
-      }
-      catch(Exception $e)
-      {
-        Mage::log("Import shipping details - " . $e->getMessage(), null, 'Increasingly_Analytics.log');
-      }
-
-   }
-
 }

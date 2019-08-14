@@ -151,27 +151,7 @@
             <value>increasingly-catalog-product1</value>
           </action>
         </block>
-      </reference> 
-       <reference name="content"> 
-      <reference name="product.info.media.after">
-          <block type="increasingly_analytics/element" name="increasingly.catalog.product3" template="increasingly/element.phtml" after="-">
-              <action method="setData">
-                <name>div_id</name>
-                <value>increasingly-catalog-product3</value>
-              </action>
-          </block>
-      </reference>
-     </reference>   
-     <!--  <reference name="content"> 
-      <reference name="product.info.media.after">
-          <block type="increasingly_analytics/element" name="increasingly.catalog.product3" template="increasingly/element.phtml">
-              <action method="setData">
-                <name>div_id</name>
-                <value>increasingly-catalog-product3</value>
-              </action>
-          </block>
-      </reference>
-     </reference>    -->
+      </reference>           
   </catalog_product_view>
 
   <MY_HANDLE_catalog_product_view>

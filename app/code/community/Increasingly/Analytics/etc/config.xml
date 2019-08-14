@@ -32,7 +32,7 @@
 <config>
   <modules>
     <Increasingly_Analytics>
-      <version>1.0.19</version>	
+      <version>1.0.3</version>	
     </Increasingly_Analytics>
   </modules>
   <global>
@@ -72,7 +72,16 @@
             <method>trackNewOrder</method>
           </place_order>
         </observers>
-      </sales_order_place_after>     
+      </sales_order_place_after>
+      <sales_order_save_after>
+        <observers>
+          <update_order>
+            <type>singleton</type>
+            <class>Increasingly_Analytics_Model_Observer</class>
+            <method>updateOrder</method>
+          </update_order>
+        </observers>
+      </sales_order_save_after>
       <sales_quote_collect_totals_after>
         <observers>
           <apply_cart_discount>
@@ -108,16 +117,7 @@
             <method>productDelete</method>
           </product_delete>
         </observers>
-      </catalog_product_delete_commit_after>     
-      <admin_system_config_changed_section_carriers>
-         <observers>
-          <import_shipping_details>
-            <type>singleton</type>
-            <class>Increasingly_Analytics_Model_Observer</class>
-            <method>importShippingDetails</method>
-          </import_shipping_details>
-        </observers>
-      </admin_system_config_changed_section_carriers>  
+      </catalog_product_delete_commit_after>       
     </events>
     <models>
       <increasingly_analytics>
@@ -205,36 +205,41 @@
      </adminhtml>
    </routers>
   </admin>   
- <adminhtml>
-   <acl>
+  <adminhtml>
+    <acl>
       <resources>
-	 <all>
-           <title>Allow Everything</title>
-         </all>
-         <admin>
-            <children>
-              <increasingly>
-                <title>Increasingly Configuration</title>
-              </increasingly>
-            </children>
-         </admin>
+        <admin>
+          <children>
+            <system>
+              <children>
+                <config>
+                  <children>
+                    <increasingly_analytics>
+                      <title>Increasingly Configuration</title>
+                    </increasingly_analytics>
+                  </children>
+                </config>
+              </children>
+            </system>
+          </children>
+        </admin>
       </resources>
-   </acl>
-   <layout>
+    </acl>
+    <layout>
       <updates>
-         <increasingly_analytics>
-            <file>increasingly_analytics.xml</file>
-         </increasingly_analytics>
-      </updates>
-   </layout>
-   <menu>
-      <increasingly>
-         <title>Increasingly</title>
-         <sort_order>70</sort_order>
-         <action>adminhtml/DataIntegration/index</action>
-      </increasingly>
-   </menu>
-</adminhtml>
+       <increasingly_analytics>
+        <file>increasingly_analytics.xml</file>
+      </increasingly_analytics>
+    </updates>
+  </layout>
+  <menu>
+    <increasingly>
+      <title>Increasingly</title>
+      <sort_order>70</sort_order>
+      <action>adminhtml/DataIntegration/index</action>
+    </increasingly>
+  </menu>
+  </adminhtml>
   <default>
     <increasingly_analytics>
       <settings>

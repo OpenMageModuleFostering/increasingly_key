@@ -40,121 +40,54 @@ class Increasingly_Analytics_Helper_ProductFormatter extends Mage_Core_Helper_Ab
       $dateFormatter = Mage::helper('increasingly_analytics/DateFormatter');
 
       $productData = array(
-        'product_id'      =>  $product->getId(),     
-        'categories'      =>  array(),           
-        'product_url'     =>  $product->getProductUrl(),    
+        'product_id'      =>  $product->getId(),
+        'product_sku'     =>  $product->getSku(),
+        'product_name'    =>  $product->getName(),
+        'categories'      =>  array(),
+        //'currency'      =>  Mage::app()->getStore()->getDefaultCurrencyCode(),
+        'product_price'   =>  $priceFormatter->format($product->getPrice()),
+        'special_price'   =>  $priceFormatter->format($product->getSpecialPrice()),                
+        'product_url'     =>  $product->getProductUrl(),
+        'description'     =>  $product->getShortDescription(),
+        'status'        =>  (int)$product->getStatus(),
         'product_type'  =>  $product->getTypeId(), 
         'created_at'    =>  $dateFormatter->getFormattedDate($product->getCreatedAt()),
         'updated_at'    =>  $dateFormatter->getFormattedDate($product->getUpdatedAt()) 
         );
 
-       if($product->getResource()->getAttribute('sku'))
-       {      
-          $productData['product_sku'] = $product->getSku();       
-       }
-
-       if($product->getResource()->getAttribute('name'))
-       {
-         $productData['product_name'] = $product->getName();  
-       }  
-
-       if($product->getResource()->getAttribute('price'))
-       {
-         $productData['product_price'] = $priceFormatter->format($product->getPrice());  
-       }  
-
-       if($product->getResource()->getAttribute('special_price'))
-       {
-         $productData['special_price'] = $priceFormatter->format($product->getSpecialPrice());  
-       } 
-     
-       
-       if($product->getResource()->getAttribute('description'))
-       {
-    	 $productData['description'] = Mage::getModel('catalog/product')
-			 	->load($product->getId())->getDescription();  
-       }
- 
-       if($product->getResource()->getAttribute('short_description'))
-       {
-   	 $productData['short_description'] = Mage::getModel('catalog/product')
-			 	->load($product->getId())->getShortDescription();  
-       }  
-
-       if($product->getResource()->getAttribute('status'))
-       {
-         $productData['status'] = (int)$product->getStatus();  
-       }
-
-      $productDefaultImage = '';
-      if($product->getResource()->getAttribute('image'))
-      {
-         try
-         {
-	    $productDefaultImage = Mage::getModel('catalog/product_media_config')->getMediaUrl(Mage::getModel('catalog/product')
-				 	->load($product->getId())->getImage());
-
-            if(!empty($productDefaultImage) && $productDefaultImage !== 'no_selection')
-	    {          
-	      $productData['image_url'] =  $productDefaultImage;
-	    }
-	    else
-	    {
-	      $productData['image_url'] = $product->getImageUrl();
-	    }
-         }
-         catch(Exception $e)
-         {
-           Mage::log($e->getMessage(), null, 'Increasingly_Analytics.log');
-         }
-       }
-       
-       $productData['original_image_url'] = $this->buildImageUrl($product);
-
-       if($product->getResource()->getAttribute('manufacturer'))
-       {
+        $productDefaultImage = $product->getData('image');
+        if(!empty($productDefaultImage) && $productDefaultImage !== 'no_selection')
+        {
+          //$productData['image_url'] =  $product->getImageUrl();
+           $productData['image_url'] =  Mage::getModel('catalog/product_media_config')->getMediaUrl($product->getImage());
+        }
+        else
+        {
+          $productData['image_url'] = '';
+        }
         $manufacturer = $product->getAttributeText('manufacturer');            
         if(strlen($manufacturer) > 0 && $manufacturer != false) 
         {
           $productData['manufacturer'] = $manufacturer;
         }
-       }
 
-       if($product->getResource()->getAttribute('color'))
-       {
         $color =  $product->getAttributeText('color');
         if(strlen($color) > 0 && $color != false) 
         {
          $productData['color'] = $color;
-        }
        }
 
-       if($product->getResource()->getAttribute('weight'))
+       $weight = $product->getWeight();
+       if(strlen($weight) > 0 && $weight != false) 
        {
-          $weight = $product->getWeight();
-          if(strlen($weight) > 0 && $weight != false) 
-          {
-           $productData['weight'] = $weight;
-          }
+         $productData['weight'] = $weight;
        }
 
-      if($product->getResource()->getAttribute('size'))
+      $size = $product->getAttributeText('size');
+      if(strlen($size) > 0 && $size != false) 
       {
-	 $size = $product->getAttributeText('size');
-	 if(strlen($size) > 0 && $size != false) 
-	 {
-	   $productData['size'] = $size;
-	 }
+        $productData['size'] = $size;
       }
-
-      if($product->getResource()->getAttribute('visibility'))
-       {
-         $visibility = $product->getAttributeText('visibility');
-	 if(strlen($visibility) > 0 && $visibility != false) 
-	 {
-	   $productData['visibility'] = $visibility;
-	 }         
-       }
 
       if($productData['product_type'] == "configurable") 
       {
@@ -172,6 +105,7 @@ class Increasingly_Analytics_Helper_ProductFormatter extends Mage_Core_Helper_Ab
 
       if($productData['product_type'] == "grouped") 
       {
+
         $groupedProducts = Mage::getModel('catalog/product_type_grouped')->getChildrenIds($productData['product_id']);
         $grouped_items = array();
 
@@ -232,8 +166,6 @@ class Increasingly_Analytics_Helper_ProductFormatter extends Mage_Core_Helper_Ab
         $productData['categories'][] = $categoryInfo;
       }
 
-    if($product->getResource()->getAttribute('media_gallery'))
-    {
       $otherImages = $product->getMediaGalleryImages();
 
       if($otherImages == '' || count($otherImages) == 0)
@@ -246,23 +178,12 @@ class Increasingly_Analytics_Helper_ProductFormatter extends Mage_Core_Helper_Ab
       {
        foreach($otherImages as $img)
        {
-         if(!empty($productDefaultImage))
+         if($img->getFile() != $productDefaultImage)
          {
-           if($img->getFile() != $productDefaultImage){
-           	$productData['other_image_list'][] = $img->getUrl();
-           }
-         }
-         else{
-	   $productData['other_image_list'][] = $img->getUrl();
+           $productData['other_image_list'][] = $img->getUrl();
          }
        }
-      } 
-
       }
-
-      $inventoryDetails = $stock->getData();
-      $productData['inventory_details'] = $inventoryDetails;
-     
     } 
     catch(Exception $e)
     {
@@ -271,37 +192,6 @@ class Increasingly_Analytics_Helper_ProductFormatter extends Mage_Core_Helper_Ab
 
     return $productData;
   }  
-
-  protected function buildImageUrl($product)
-  {
-    $url = null;
-
-    try
-    {
-       $store = Mage::app()->getWebsite(true)->getDefaultGroup()->getDefaultStore();    
-       $helper = Mage::helper('increasingly_analytics');
-       $imageVersion = $helper->getProductImageVersion($store);
-       $img = $product->getData($imageVersion);
-       $img = $this->isValidImage($img) ? $img : Mage::getModel('catalog/product')->load($product->getId())->getImage();
-
-       if ($this->isValidImage($img)) {        
-        $baseUrl = rtrim($store->getBaseUrl('media'), '/');
-        $file = str_replace(DS, '/', $img);
-        $file = ltrim($file, '/');
-        $url = $baseUrl.'/catalog/product/'.$file;
-       }
-    }
-    catch(Exception $e)
-    {
-      Mage::log($e->getMessage(), null, 'Increasingly_Analytics.log');
-    }
-    return $url;
-  }
-
-  protected function isValidImage($image)
-  {
-    return (!empty($image) && $image !== 'no_selection');
-  }
 
 }
 

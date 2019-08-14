@@ -31,7 +31,7 @@
 class Increasingly_Analytics_ProductsApiController extends Mage_Core_Controller_Front_Action 
 {
  
- public function productsAction() 
+  public function productsAction() 
   {
     try 
     {
@@ -45,11 +45,27 @@ class Increasingly_Analytics_ProductsApiController extends Mage_Core_Controller_
       $products = array();
       $productFormatHelper = Mage::helper('increasingly_analytics/ProductFormatter');
 
+      $attributes = array(
+        'name',
+        'sku',
+        'image',
+        'manufacturer',
+        'price',
+        'final_price',
+        'special_price',
+        'short_description',
+        'color',
+        'weight',
+        'size'          
+        );
+
       $limit = $this->getRequest()->getParam('limit', 200);
-      $offset = $this->getRequest()->getParam('offset', 1);     
-     
+      $offset = $this->getRequest()->getParam('offset', 1);
+
       $productsCollection = Mage::getModel('catalog/product')->getCollection();
-      $productsCollection->addAttributeToSelect('*')->getSelect()->limit($limit, $offset);
+
+      $productsCollection->addAttributeToSelect($attributes)->getSelect()->limit($limit, $offset);
+
       $totalProductCount = Mage::getModel('catalog/product')->getCollection()->count();
 
       foreach($productsCollection as $product) 
@@ -71,9 +87,8 @@ class Increasingly_Analytics_ProductsApiController extends Mage_Core_Controller_
     } catch(Exception $e) {
 
     Mage::log($e->getMessage(), null, 'Increasingly_Analytics.log');
-
     $this->getResponse()
-    ->setBody(json_encode(array('status' => 'error', 'message' => $e->getMessage(), 'version' => $version)))
+    ->setBody(json_encode(array('status' => 'error', 'message' => 'Internal server error', 'version' => $version)))
     ->setHttpResponseCode(500)
     ->setHeader('Content-type', 'application/json', true);
     }

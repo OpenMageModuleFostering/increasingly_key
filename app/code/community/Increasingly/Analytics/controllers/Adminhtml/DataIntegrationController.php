@@ -38,11 +38,6 @@ class Increasingly_Analytics_Adminhtml_DataIntegrationController extends Mage_Ad
       $this->renderLayout();	
   }
  
-  protected function _isAllowed()
-  {
-     return Mage::getSingleton('admin/session')->isAllowed('increasingly');
-  }
-
   public function saveConfigDetailsAction()
   {    
     $session = Mage::getSingleton('core/session');

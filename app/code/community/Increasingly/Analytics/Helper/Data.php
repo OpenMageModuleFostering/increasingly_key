@@ -183,15 +183,15 @@ class Increasingly_Analytics_Helper_Data extends Mage_Core_Helper_Abstract
   **
   */
   public function formBundleJson(){
-
-    $bundleData = [];
     try {
-      
+      $bundleData = [];
       $cookieValue = Mage::getModel('core/cookie')->get('ivid');  
       $userBundleCollection = Mage::getModel('increasingly_analytics/bundle')->getCollection()
         ->addFieldToFilter('increasingly_visitor_id',$cookieValue);
-
-      foreach($userBundleCollection as $userBundle){          
+      foreach($userBundleCollection as $userBundle){
+          $userBundle->getBundleId();
+          $userBundle->getDiscountPrice();
+          $userBundle->getTotalPrice();
           array_push($bundleData, 
             array('id' => $userBundle->getBundleId(),
               'discountPrice' => $userBundle->getDiscountPrice(),
@@ -200,14 +200,8 @@ class Increasingly_Analytics_Helper_Data extends Mage_Core_Helper_Abstract
       }
     }
     catch (Exception $e) 
-    {      
+    {
       Mage::log("Increasingly form bundle json- " . $e->getMessage(), null, 'Increasingly_Analytics.log');
-      $error_info = array(
-         'method' => 'OrderTrackingformBundleJson',
-         'error_message' => $e->getMessage()
-      	);
-
-      $this->addEvent('track', 'track_error', $error_info);
     }  
     return $bundleData;
   }
@@ -217,29 +211,13 @@ class Increasingly_Analytics_Helper_Data extends Mage_Core_Helper_Abstract
   */
   public function deleteBundleOnProductDeleteFromCart($product_id){
     try { 
-      
       $cookieValue = Mage::getModel('core/cookie')->get('ivid'); 
       $userBundleCollection = Mage::getModel('increasingly_analytics/bundle')->getCollection()->addFieldToFilter('increasingly_visitor_id',$cookieValue);
-
       if(count($userBundleCollection) >= 1){
-
-        foreach($userBundleCollection as $bundle){
-       
-	 $isProductInBundle = in_array($product_id, explode(',',$bundle->getProductIds()));	
-         
-         if(!is_null($isProductInBundle) && !empty($isProductInBundle) && $isProductInBundle == true)
-         {
-           $userBundle = Mage::getModel('increasingly_analytics/bundle');
- 	   $cart_bundle_data = array(
-             'bundle_id' => $bundle->getBundleId()
-           ); 
-           $userBundle->setId($bundle->getId())->delete();  
- 	        
-	   $this->addEvent('track', 'bundle_delete_from_cart', $cart_bundle_data);        
-         }
-
-        }
-     }
+        $userBundle = Mage::getModel('increasingly_analytics/bundle');
+        $userBundle->setId($userBundleCollection->getFirstItem()->getId())->delete();
+        $userBundle->save($cookieValue);
+      }
     } 
     catch (Exception $e) 
     {
@@ -255,15 +233,10 @@ class Increasingly_Analytics_Helper_Data extends Mage_Core_Helper_Abstract
     try { 
       $cookieValue = Mage::getModel('core/cookie')->get('ivid'); 
       $userBundleCollection = Mage::getModel('increasingly_analytics/bundle')->getCollection()->addFieldToFilter('increasingly_visitor_id',$cookieValue);
-      //$productIds = explode(',', $userBundle->getProductIds);
+      $productIds = explode(',', $userBundle->getProductIds);
       if($quote->getItemsCount() == 0 && count($userBundleCollection) >= 0) {
          foreach ($userBundleCollection as $userBundle) {
-
-           $cart_bundle_data = array(
-              'bundle_id' => $userBundle->getBundleId()
-            ); 	   
            $userBundle->delete();
- 	   $this->addEvent('track', 'bundle_delete_from_cart', $cart_bundle_data);
            
          }
       }
@@ -271,31 +244,6 @@ class Increasingly_Analytics_Helper_Data extends Mage_Core_Helper_Abstract
     catch (Exception $e) 
     {
       Mage::log("Increasingly delete bundle on emptyCart- " . $e->getMessage(), null, 'Increasingly_Analytics.log');
-    }  
-    
-  }
-
-  /**Delete bundle when the items in the cart are purchased
-  **
-  */
-  public function deleteBundleOnPurchase()
-  {
-    try 
-    { 
-      $cookieValue = Mage::getModel('core/cookie')->get('ivid'); 
-      $userBundleCollection = Mage::getModel('increasingly_analytics/bundle')->getCollection()->addFieldToFilter('increasingly_visitor_id',$cookieValue);
-      
-        if(count($userBundleCollection) >= 0)
-	{
-         foreach ($userBundleCollection as $userBundle)
-	 {
-           $userBundle->delete();
-         }
-        }
-    } 
-    catch (Exception $e) 
-    {
-      Mage::log("Increasingly delete bundle on purchase - " . $e->getMessage(), null, 'Increasingly_Analytics.log');
     }  
     
   }
@@ -320,7 +268,7 @@ class Increasingly_Analytics_Helper_Data extends Mage_Core_Helper_Abstract
       ksort($data);     
       $encodedData = base64_encode(Mage::helper('core')->jsonEncode($data));
       $signature = md5($encodedData.$api_secret);
-      $url = 'https://optimizedby.increasingly.co/ImportData';  //Live Url - https://optimizedby.increasingly.co/ImportData
+      $url = 'http://optimizedby.increasingly.co/ImportData';
       $client = new Varien_Http_Client($url);
        
       $postData = array(
@@ -330,22 +278,15 @@ class Increasingly_Analytics_Helper_Data extends Mage_Core_Helper_Abstract
       $jsonData = json_encode($postData);        
       $client->setRawData($jsonData, 'application/json');
       $response = $client->request('POST');      
-      $result = json_decode($response->getBody());  
-       
+      $result = json_decode($response->getBody());    
       if ($response->isError()) {
           Mage::log($response->getBody(), null, 'Increasingly_Analytics.log');
       }  
 
     } 
     catch (Exception $e) 
-    {      
+    {
       Mage::log("Increasingly api call- " . $e->getMessage(), null, 'Increasingly_Analytics.log');
-      $error_info = array(
-	 'method' => 'increasinglyapimethod',
-         'error_message' => $e->getMessage()
-      	);
-
-      $this->addEvent('track', 'track_error', $error_info);
     }    
     return $result;
   }
@@ -391,8 +332,6 @@ class Increasingly_Analytics_Helper_Data extends Mage_Core_Helper_Abstract
   {
     return Mage::getStoreConfig(self::XML_PATH_IMAGE_VERSION, $store);
   }
-
-  
 
    
 }
