@@ -279,7 +279,7 @@ class Increasingly_Analytics_Helper_Data extends Mage_Core_Helper_Abstract
       ksort($data);     
       $encodedData = base64_encode(Mage::helper('core')->jsonEncode($data));
       $signature = md5($encodedData.$api_secret);
-      $url = 'http://optimizedby.increasingly.co/ImportData';
+      $url = 'http://localhost:8087/ImportData';
       $client = new Varien_Http_Client($url);
        
       $postData = array(

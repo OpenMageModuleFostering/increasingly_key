@@ -188,6 +188,7 @@ class Increasingly_Analytics_AddbundletocartController extends Mage_Core_Control
       $this->cart= Mage::getSingleton('checkout/cart');
       
       if($data[0]["bundle_id"] != null || $data[0]["bundle_id"] || ""){
+
         $bundle_id = $data[0]["bundle_id"];
         $productIds = [];
         $discountPrice = $data[0]["discountPrice"];
@@ -196,9 +197,18 @@ class Increasingly_Analytics_AddbundletocartController extends Mage_Core_Control
         $outOfStockProducts = [];
         $productErrorStr = "";
         $productSuccessStr = "";
+        $quantity = 1;
+
         for ($x = 0; $x < count($data[0]["params"]); $x++) {
           $productIds[$x] = trim($data[0]["params"][$x]["product_id"]);
         } 
+
+        if(count($productIds) == 1 && $bundle_id == 0){
+ 
+           $quantity = $data[0]["params"][0]["qty"];
+        }
+        
+
         //Push the products into instock and out of stock arrays to handle the success and error messages at cart page
         foreach ($productIds as $productId) { 
           $product = Mage::getModel('catalog/product');         
@@ -213,21 +223,27 @@ class Increasingly_Analytics_AddbundletocartController extends Mage_Core_Control
             $productErrorStr .= $product->getName().", ";
           }          
         }
+
         //Add all the instock products to the cart and prepare the success message
         foreach ($inStockProducts as $product_id) {
           $product = Mage::getModel('catalog/product');
           $product->load($product_id);
-          $this->cart->addProduct($product,array('qty' => 1));
+          $this->cart->addProduct($product,array('qty' => $quantity));
           $productSuccessStr .= $product->getName().", ";
         }
+
         //Trim the success message
         $productSuccessStr = rtrim(trim($productSuccessStr),',');
+
         //Trim the error message
         $productErrorStr = rtrim(trim($productErrorStr),',');
+
         //Save all the products added to the cart
         $this->cart->save();
+
         //Add the bundles to the database if all the products are in stock
-        if(count($outOfStockProducts) == 0){
+        if(count($outOfStockProducts) == 0 && count($productIds) > 1 && $bundle_id > 0){
+
           $productIdsStr = implode(',',$productIds);
           $cookieValue = Mage::getModel('core/cookie')->get('ivid');   
           $userBundleCollection = Mage::getModel('increasingly_analytics/bundle')->getCollection()
@@ -244,19 +260,23 @@ class Increasingly_Analytics_AddbundletocartController extends Mage_Core_Control
             $userBundle->setTotalPrice($totalPrice);
             $userBundle->save();
           }
+
           //Set cart was updated flag
           Mage::getSingleton('checkout/session')->setCartWasUpdated(true);
           
         }
+
         if($productSuccessStr != "")
           Mage::getSingleton('core/session')->addSuccess($productSuccessStr.' added to your shopping cart');
+
         //Error message for the out of stock products
         if($productErrorStr != "")
           Mage::getSingleton('core/session')->addNotice($productErrorStr.' is out of stock');
+
         //Redirect to the cart
         $this->_redirect('checkout/cart');
         
-      }
+      }    
     }
     catch(Exception $e)
     {
